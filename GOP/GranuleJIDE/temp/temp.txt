@@ -1,0 +1,3 @@
+
+ty_xian:Xian;city_sahnghai:Xian k
+0;overload:0.5
