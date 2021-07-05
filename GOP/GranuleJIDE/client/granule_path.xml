@@ -1,1 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><g-path/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><g-path><granule name="gTestA" path="TestA:varA"/><granule name="gTestB" path="TestA:varA,TestB:varB"/><granule name="gTestC" path="TestC:s1"/></g-path>
