@@ -1,21 +1,19 @@
 package granulej.lang;
+
 import javassist.*;
 
 import java.io.IOException;
 
 public class ShadowSetClassGenerator {
-    public void addShadow(String name)
-    {
+    public void addShadow(String name) {
 
     }
 
-    public void build()
-    {
+    public void build() {
 
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         ClassPool cp = ClassPool.getDefault();
         try {
             cp.insertClassPath("D:\\GranuleJ\\GOP\\GranuleJIDE\\example\\Log\\bin");

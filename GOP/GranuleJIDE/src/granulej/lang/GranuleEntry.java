@@ -7,80 +7,80 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.Manifest;
 
 public class GranuleEntry {
-  
-	public long lastModified = -1;
 
-	public byte[] binaryContent = null;
+    public long lastModified = -1;
 
-	public volatile Class<?> loadedClass = null;
+    public byte[] binaryContent = null;
 
-	public URL source = null; //文件路徑
+    public volatile Class<?> loadedClass = null;
 
-	public URL codeBase = null; //远程方法所用到的代码基,現在木有使用
+    public URL source = null; //文件路徑
 
-	public Manifest manifest = null;//jar文件的manifest
+    public URL codeBase = null; //远程方法所用到的代码基,現在木有使用
 
-	public Certificate[] certificates = null;//網絡上的認證
+    public Manifest manifest = null;//jar文件的manifest
 
-	private AtomicInteger count;
+    public Certificate[] certificates = null;//網絡上的認證
 
-	private AtomicLong lastAccess;
+    private AtomicInteger count;
 
-	public GranuleEntry(){
-	 this.count = new AtomicInteger(0);
-	 this.lastAccess = new AtomicLong(System.nanoTime());
-	}
+    private AtomicLong lastAccess;
 
-	public void updateLastAccess() {
-	 this.lastAccess.set(System.nanoTime());
-	}
+    public GranuleEntry() {
+        this.count = new AtomicInteger(0);
+        this.lastAccess = new AtomicLong(System.nanoTime());
+    }
 
-	public Certificate[] getCertificates() {
-	return certificates;
-	}
+    public void updateLastAccess() {
+        this.lastAccess.set(System.nanoTime());
+    }
 
-	public void setCertificates(Certificate[] certificates) {
-	this.certificates = certificates;
-	}
+    public Certificate[] getCertificates() {
+        return certificates;
+    }
 
-	public long getLastModified() {
-	return lastModified;
-	}
+    public void setCertificates(Certificate[] certificates) {
+        this.certificates = certificates;
+    }
 
-	public void setLastModified(long lastModified) {
-	this.lastModified = lastModified;
-	}
+    public long getLastModified() {
+        return lastModified;
+    }
 
-	public Class<?> getLoadedClass() {
-		return loadedClass;
-	}
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
 
-	public void setLoadedClass(Class<?> loadedClass) {
-		this.loadedClass = loadedClass;
-	}
+    public Class<?> getLoadedClass() {
+        return loadedClass;
+    }
 
-	public Manifest getManifest() {
-		return manifest;
-	}
+    public void setLoadedClass(Class<?> loadedClass) {
+        this.loadedClass = loadedClass;
+    }
 
-	public void setManifest(Manifest manifest) {
-		this.manifest = manifest;
-	}
+    public Manifest getManifest() {
+        return manifest;
+    }
 
-	public AtomicInteger getCount() {
-		return count;
-	}
+    public void setManifest(Manifest manifest) {
+        this.manifest = manifest;
+    }
 
-	public void setCount(AtomicInteger count) {
-		this.count = count;
-	}
+    public AtomicInteger getCount() {
+        return count;
+    }
 
-	public AtomicLong getLastAccess() {
-		return lastAccess;
-	}
+    public void setCount(AtomicInteger count) {
+        this.count = count;
+    }
 
-	public void setLastAccess(AtomicLong lastAccess) {
-		this.lastAccess = lastAccess;
-	}
-	
+    public AtomicLong getLastAccess() {
+        return lastAccess;
+    }
+
+    public void setLastAccess(AtomicLong lastAccess) {
+        this.lastAccess = lastAccess;
+    }
+
 }
