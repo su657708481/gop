@@ -6,11 +6,10 @@ class Main extends Thread
 
 	public void run()
 	{ 	
-		cityname = "Xian";
-		cityname = "Shanghai";
+		City city = new City();
 		for(int i=0;i<1000;i++)
 		{
-			City city = new City();
+			cityname = "Shanghai";	
 			city.createUI();
 			try {
 				Thread.sleep(5000);
@@ -18,8 +17,13 @@ class Main extends Thread
 				e.printStackTrace();
 			}
 			// 上下文更改
-			//cityname = "Shanghai";
 			cityname = "Xian";
+			city.createUI();
+			try {
+				Thread.sleep(5000);
+			}catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}

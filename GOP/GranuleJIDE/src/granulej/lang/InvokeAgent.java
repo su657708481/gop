@@ -62,7 +62,7 @@ public class InvokeAgent {
 	}
 
 	/*
-		粒替换会后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
+		粒替换后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
 		替换返回类型不是void的方法
 	 */
 	public static <IN,OUT> OUT replaceMethod(IN obj,String gName,String methodName,Class[] argsTypes,Object [] args)

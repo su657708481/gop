@@ -17,6 +17,6 @@ class City within gShanghaiCity
 	
 	public void createUI()
 	{
-		System.out.println("gShanghaiCity createUI");
+		System.out.println("gCity_ShanghaiÓ°×ÓÀà createUI");
 	}
 }

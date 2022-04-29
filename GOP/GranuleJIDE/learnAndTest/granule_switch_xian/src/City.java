@@ -1,4 +1,4 @@
-class City
+public class City
 {
 	City()
 	{

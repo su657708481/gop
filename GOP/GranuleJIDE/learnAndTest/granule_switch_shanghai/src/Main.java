@@ -6,20 +6,27 @@ class Main extends Thread
 
 	public void run()
 	{ 	
-		//cityname = "Xian";
-		//cityname = "Shanghai";
-		for(int i=0;i<1000;i++)
+		City city = new City();
+		for(int i=0;i<5;i++)
 		{
-			City city = new City();
+			// 上下文更改
+			cityname = "Xian";
 			city.createUI();
 			try {
 				Thread.sleep(5000);
 			}catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			// 上下文更改
+			
 			cityname = "Shanghai";
-			cityname = "Xian";
+			city.createUI();
+			try {
+				Thread.sleep(5000);
+			}catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("==============");
+			
 		}
 		
 	}
