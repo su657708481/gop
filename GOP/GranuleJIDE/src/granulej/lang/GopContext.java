@@ -174,7 +174,8 @@ public class GopContext {
     /*
         修改上下文的值,以及modifiers，并且连接服务器修改服务器端的上下文值
      */
-    public static synchronized void modifyContext(String name, String newValue, String modifiers) {
+    public static synchronized void modifyContext(String name, String newValue, String modifiers, String thredName) {
+        System.out.println("ThredName: "+thredName);
         if (contexts.containsKey(name)) {
             Context ct = (Context) contexts.get(name);
             if (modifiers != null && !modifiers.equals("") && !modifiers.equals(ct.getModifiers()))
@@ -247,8 +248,9 @@ public class GopContext {
         }
     }
 
-    public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers) {
-        modifyContext(name, seraializeObject(object), modifiers);
+    public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers,String thredName) {
+        System.out.println("modifyContextByObject: ThredName: "+thredName);
+        modifyContext(name, seraializeObject(object), modifiers, thredName);
         object_cache.put(name, object);
     }
 

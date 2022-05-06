@@ -315,12 +315,22 @@ public class AssignSimpleExpr extends AssignExpr implements Cloneable {
 					   StringLiteral para3=new StringLiteral(convar.getModifiers().toString());
 					   l.add(para3);
 					   //}
-                        String methodname=new String(isObject ? "modifyContextByObject" : "modifyContext");
+                       String methodname=new String(isObject ? "modifyContextByObject" : "modifyContext");
+
 				       ParseName pn= new ParseName(methodname);
 
 				       AbstractDot d = new AbstractDot(ta,pn);
+
+				       //多线程代码插装  第四个参数：线程名字
+//                       AbstractDot thredNameDot = new AbstractDot()
+//                       String getThredName=new String("getName");
+//                       MethodAccess getThredNameMethod = new MethodAccess(getThredName,new List<Expr>());
+
+				       StringLiteral para4=new StringLiteral("main");
+				       l.add(para4);
+
 				       MethodAccess m = new MethodAccess(methodname,l);
-				       d.replaceLast(m);					   
-				       return d;  
+				       d.replaceLast(m);
+				       return d;
 				}  }
 }

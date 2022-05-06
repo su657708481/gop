@@ -19,6 +19,7 @@ import java.util.*;
  */
 public class InvokeAgent {
 
+    // 前可能要处理的粒
     private static ArrayList<String> lastGranules = null;
     private static HashMap<String, Class> loadedGranules = new HashMap<String, Class>();
     private static HashMap<String, Method> fitnessMethods = new HashMap<String, Method>();
@@ -27,24 +28,25 @@ public class InvokeAgent {
         对粒gName做适合性检查
      */
     public static <IN> boolean doFitness(String gName) {
-        //System.out.println("in doFitness");
-        //long t0 = System.nanoTime();
+//		System.out.println("in doFitness");
+        long t0 = System.nanoTime();
         GranuleNode gn = GranuleTree.getInstance().getGranuleNode(gName);
         if (gn == null || gn.isRemoved()) {
             lastGranules = null;
             return false;
         }
-        // 若允许脏技术的话，检查粒是否是脏粒
+        // 若允许脏技术的话，检查粒是否是脏粒。
+        // 如果不是脏粒，那么粒一定是适合的
         if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus())
             return true;
 
         //记录下当前可能要处理的粒
         lastGranules = null;
         boolean result = fitnessChecking(gName);
-        //long t1 = System.nanoTime();
-        //if (GranuleOptions.enableAnalyseGranuleSub)
-        //System.out.println("fitness check:" + (t1 - t0));
-
+        long t1 = System.nanoTime();
+        if (GranuleOptions.enableAnalyseGranuleSub) {
+            System.out.println("fitness check:" + (t1 - t0));
+        }
 
         return result;
 /*
@@ -61,10 +63,11 @@ public class InvokeAgent {
     }
 
     /*
-        粒替换后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
+        粒替换会后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
         替换返回类型不是void的方法
      */
     public static <IN, OUT> OUT replaceMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args) {
+
 //		printLog("in replaceMethod");
 
         ExecuteUnit exeUnit;
@@ -133,8 +136,6 @@ public class InvokeAgent {
                 return;
             }
         }
-
-//		test();		
 
 //		//执行新对象的函数，并将新的对象更新到对象列表中
         long t2 = System.nanoTime();
@@ -251,6 +252,9 @@ public class InvokeAgent {
 		*/
     }
 
+    /*
+		组合新类并迁移到新对象
+     */
     private static ExecuteUnit compositeAndTransfer(Object obj) {
         long t0 = System.nanoTime();
         Class newClass = ObjectAgent.compositeShadowForClass(obj.getClass());
@@ -273,11 +277,14 @@ public class InvokeAgent {
         return new ExecuteUnit(newInstance, newClass);
     }
 
+    /*
+		xml粒树的替换
+     */
     private static ExecuteUnit analyseExecuteUnit(Object obj, String gName, GranuleUnit unit) {
 //		printLog("in ExecuteUnit");
-        //是否在安全点
-        String className = obj.getClass().getName();
-        if (isSafePoint(className)) {
+		String className = obj.getClass().getName();
+		//是否在安全点
+		if (isSafePoint(className)) {
             String shadowClassName = "";
             try {
 //				System.out.println("lastGranules.get(0): "+lastGranules.get(0));
@@ -322,6 +329,7 @@ public class InvokeAgent {
     }
 
     private static Method getMethod(Class cls, String methodName, Class[] argsTypes) {
+
         while (cls != null) {
             try {
                 Method method = cls.getDeclaredMethod(methodName, argsTypes);
@@ -358,6 +366,9 @@ public class InvokeAgent {
         return result;
     }
 
+    /*
+        getDeclaredFields获取类中所有的属性(public、protected、default、private)，但不包括继承的属性
+     */
     private static List<Field> getAllFields(Class<?> type) {
         List<Field> fields = new ArrayList<Field>();
         for (Class<?> c = type; c != null; c = c.getSuperclass()) {
@@ -374,15 +385,18 @@ public class InvokeAgent {
         return h;
     }
 
-    //装换类的状态和对象的状态
+    /*
+        装换类的状态和对象的状态
+    */
     private static Object transferClassAndObjectState(Class newClass, Object oldObject) {
         //接下来该转换类的状态和对象，对应vs中的translateClassState()
         Class oldClass = oldObject.getClass();
 
-//		System.out.println("start transfer class and object!");
+		//System.out.println("start transfer class and object!");
 
         //生成新的对象
         Object resObj = null;
+
         try {
             Constructor constructor = newClass.getDeclaredConstructor();
             constructor.setAccessible(true);
@@ -394,7 +408,6 @@ public class InvokeAgent {
             return resObj;
         }
 
-        int fieldCount = 0;
         //获取新类的属性，如果刚好旧类中的静态属性存在，那么就转移过来，如果不存在，则初始化为null
         List<Field> newFields = getAllFields(newClass);
         HashMap<String, Field> oldFields = getAllFieldsMap(oldClass);
@@ -456,6 +469,9 @@ public class InvokeAgent {
 
     }
 
+    /*
+        获取所有脏的父节点
+     */
     private static void getDirtyParents(GranuleNode g, ArrayList<String> result) {
         while (g != null && !g.getGranuleName().equals("g0")) {
             if (GranuleOptions.enableDirtyFlag && !g.isDirty() && g.getStatus())
@@ -472,14 +488,16 @@ public class InvokeAgent {
     }
 
     //TODO 这里遇到一个问题，适合性检查如果是检查当前粒的所有父粒是不是都是true的话，那么如果遇到中间粒为false，将导致粒树需要替换这个粒所有的子粒，
-    //     使得替换对象时，需要更新所有粒对应的对象，这里存在不她合理的问题,所以当前情况下，我只检查了当前粒的状态
-    //检查一个粒的适合性
+    //     使得替换对象时，需要更新所有粒对应的对象，这里存在不合理的问题,所以当前情况下，我只检查了当前粒的状态
+	/*
+		检查一个粒的适合性
+	 */
     public static boolean fitnessChecking(String gName) {
 //		printLog("in fitnessChecking");
         //得到粒的父粒，挨个判断是否满足适合性条件
         ArrayList<String> gParents = getDirtyParents(gName);//GranuleTree.getGranuleParents(gName, "root");
-//		ArrayList<String> gParents = new ArrayList<String>();
-        Collections.reverse(gParents);
+        Collections.reverse(gParents);  // 翻转
+
         //依次遍历粒树，挨个执行fitness函数
         for (int i = 0; i < gParents.size(); ++i) {
             //将粒load进来
@@ -487,6 +505,7 @@ public class InvokeAgent {
             String graName = gParents.get(i);
             GranuleNode gn = GranuleTree.getInstance().getGranuleNode(graName);
 
+            //不是脏粒跳过
             if (!gn.isDirty() && gn.getStatus())
                 continue;
 			
@@ -543,6 +562,9 @@ public class InvokeAgent {
         return true;
     }
 
+    /*
+        返回粒适合性测试结果：根据粒返回
+     */
     public static boolean executeGranule(Class granule) {
 
 ////		printLog("granule name is: "+granule.getName());
@@ -577,41 +599,8 @@ public class InvokeAgent {
     }
 
     /*
-        加载所有粒
+        返回粒适合性测试结果：直接执行适合性方法
      */
-    public static void loadAllGranules(ArrayList<String> granules) {
-
-        for (String graName : granules) {
-            if (graName.equals("g0"))
-                continue;
-            Class granule = loadedGranules.get(graName);
-            if (granule == null) {
-                System.out.println("已经加载：" + graName);
-                granule = GranuleLoader.loadGranule(graName);
-                loadedGranules.put(graName, granule);
-
-                //获取fitness方法
-                Method fitMethod = null;
-                try {
-                    fitMethod = granule.getDeclaredMethod("fitness");
-                } catch (Exception e) {
-                    printLog("get fitness method failed！！");
-                    e.printStackTrace();
-                }
-                try {
-                    //先将fitness方法的访问权限去掉，然后再执行
-                    fitMethod.setAccessible(true);
-                    fitnessMethods.put(graName, fitMethod);
-//					printLog("fitness result of "+granule.getName()+": "+result);
-                } catch (Exception e) {
-                    printLog("execute fitness method failed!");
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
     public static boolean executeFitness(Method fitMethod) {
         try {
             return (Boolean) fitMethod.invoke(null, null);
@@ -623,6 +612,43 @@ public class InvokeAgent {
         }
     }
 
+    /*
+        根据粒名 加载所有粒
+     */
+    public static void loadAllGranules(ArrayList<String> granules) {
+
+        for (String graName : granules) {
+            if (graName.equals("g0"))
+                continue;
+            Class granule = loadedGranules.get(graName);
+            if (granule == null) {
+                System.out.println("正在加载：" + graName);
+                granule = GranuleLoader.loadGranule(graName);
+                loadedGranules.put(graName, granule);
+
+                //获取fitness方法
+                Method fitMethod = null;
+                try {
+                    fitMethod = granule.getDeclaredMethod("fitness");
+                } catch (Exception e) {
+                    printLog("get fitness method failed！！");
+                    e.printStackTrace();
+                }
+
+                //将fitness方法的访问权限去掉
+                try {
+                    fitMethod.setAccessible(true);
+                    fitnessMethods.put(graName, fitMethod);
+//					printLog("fitness result of "+granule.getName()+": "+result);
+                } catch (Exception e) {
+                    printLog("execute fitness method failed!");
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    //TODO 安全点检查 没看懂
     public static boolean isSafePoint(String className) {
         return true;
     }
@@ -633,12 +659,12 @@ public class InvokeAgent {
     public static String getGranuleName(String className) {
         String gName = "";
 //		printLog("className: "+className);
-
         //TODO 这里以的标记可能会有问题，因为下划线在函数中是常用的符号，可能会混淆
         int start = className.lastIndexOf("/\\");
         int end = className.lastIndexOf("_");
+
         if (start >= end) {
-//			printLog("className： "+className+" get granules failed!!");
+            printLog("className： " + className + " get granules failed!!");
             gName = null;
         } else
             gName = className.substring(start + 1, end - 1);
@@ -646,19 +672,15 @@ public class InvokeAgent {
         return gName;
     }
 
-    public static void test() {
-        Math.exp(10);
-    }
-
-    //打印log
+    /*
+        打印log
+     */
     public static void printLog(String info) {
         System.out.println(info);
     }
 
     public static void main(String args[]) {
-        ArrayList array = new ArrayList();
-        array.add("3");
-        //Array.get(index);
+        System.out.println(getGranuleName("InvokeAgent_AD"));
     }
 
 }

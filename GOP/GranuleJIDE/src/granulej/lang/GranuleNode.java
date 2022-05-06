@@ -23,7 +23,7 @@ public class GranuleNode {
     //父粒
     private GranuleNode parent = null;
 
-    //粒中影子类的状态
+    //粒中影子类的状态，不适合的时候设置为false，可以执行设置为true
     private boolean status = false;
 
     //粒的脏标记

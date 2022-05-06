@@ -1,5 +1,7 @@
 package granulej.gui.datastructure;
-
+/*
+	Á£µ¥Ôª
+ */
 public class GranuleUnit{
 	public Class simiGranule=null;
 	//public Class currentGranule=null;
