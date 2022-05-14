@@ -312,6 +312,16 @@ public class GranuleTree {
         return result;
     }
 
+
+    /*
+        多线程gop: 深拷贝粒树
+     */
+    public static HashMap<String, GranuleNode> copyGranuleTree(){
+        HashMap<String, GranuleNode> deepCopy=new HashMap<String, GranuleNode>();
+        deepCopy.putAll(GranuleTree.treeNodeMaps);
+        return deepCopy;
+    }
+
     public static void main(String args[]) {
         GranuleTree.getInstance().IteratorParents("Dt3");
     }

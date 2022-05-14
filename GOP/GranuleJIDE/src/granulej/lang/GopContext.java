@@ -1,5 +1,8 @@
 package granulej.lang;
 
+import granulej.lang.mthred.ThredContextChangedEvent;
+import granulej.lang.mthred.ThredInfo;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -7,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class GopContext {
+
     private static HashMap<String, Context> contexts = new HashMap<String, Context>();
     private static HashMap<String, Object> object_cache = new HashMap<String, Object>();
 
@@ -174,8 +178,7 @@ public class GopContext {
     /*
         修改上下文的值,以及modifiers，并且连接服务器修改服务器端的上下文值
      */
-    public static synchronized void modifyContext(String name, String newValue, String modifiers, String thredName) {
-        System.out.println("ThredName: "+thredName);
+    public static synchronized void modifyContext(String name, String newValue, String modifiers) {
         if (contexts.containsKey(name)) {
             Context ct = (Context) contexts.get(name);
             if (modifiers != null && !modifiers.equals("") && !modifiers.equals(ct.getModifiers()))
@@ -248,9 +251,8 @@ public class GopContext {
         }
     }
 
-    public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers,String thredName) {
-        System.out.println("modifyContextByObject: ThredName: "+thredName);
-        modifyContext(name, seraializeObject(object), modifiers, thredName);
+    public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers) {
+        modifyContext(name, seraializeObject(object), modifiers);
         object_cache.put(name, object);
     }
 
@@ -258,4 +260,86 @@ public class GopContext {
         addContext(name, seraializeObject(object), modifiers);
         object_cache.put(name, object);
     }
+
+
+    /*
+        多线程gop：修改上下文，并记录是哪个线程发出的请求
+     */
+    public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers, long thredId) {
+        modifyContext(name, seraializeObject(object), modifiers, thredId);
+        object_cache.put(name, object);
+    }
+
+    public static synchronized void modifyContext(String name, String newValue, String modifiers, long thredId) {
+
+        // 通过id找到线程信息
+        ThredInfo thredInfo=ThredInfo.getThredInfo(new Long(thredId));
+
+        if (thredInfo.contexts.containsKey(name)) {
+            Context ct = (Context) thredInfo.contexts.get(name);
+            if (modifiers != null && !modifiers.equals("") && !modifiers.equals(ct.getModifiers()))
+                ct.setModifiers(modifiers);
+            //修改值
+            if (newValue == null && newValue == ct.getValue()){
+                return;
+            }
+            if (newValue != null && ct.getValue() != null && newValue.equals(ct.getValue())){
+                return;
+            }
+            if (newValue == null && ct.getValue() != null || newValue != null && ct.getValue() == null || newValue != null && ct.getValue() != null && !newValue.equals(ct.getValue())) {
+                if ("".equals(newValue))
+                    newValue = null;
+                if (GranuleOptions.enableGopTestInfo){
+                    String oldValue=ct.getValue();
+                    System.out.println(thredInfo.getThredName()+"; contextName: " + name +"; oldValue: " + oldValue + "; newValue: " + newValue+";");
+                }
+                ct.setValue(newValue);
+                thredInfo.contextChangedEvent.notifyChanged(name,thredInfo);
+//                ContextChangedEvent.notifyChanged(name);
+                // 没必要修改服务器上的上下文
+//                new ContextModify(name + ":" + newValue).run();
+            }
+        }
+//        if (contexts.containsKey(name)) {
+//            Context ct = (Context) contexts.get(name);
+//            if (modifiers != null && !modifiers.equals("") && !modifiers.equals(ct.getModifiers()))
+//                ct.setModifiers(modifiers);
+//            //修改值
+//            if (newValue == null && newValue == ct.getValue())
+//                return;
+//            if (newValue != null && ct.getValue() != null && newValue.equals(ct.getValue()))
+//                return;
+//            if (newValue == null && ct.getValue() != null || newValue != null && ct.getValue() == null || newValue != null && ct.getValue() != null && !newValue.equals(ct.getValue())) {
+//                if ("".equals(newValue))
+//                    newValue = null;
+//                ct.setValue(newValue);
+//                if (GranuleOptions.enableGopTestInfo){
+//                    System.out.println("Context Changed: name = " + name + ", value = " + newValue);
+//                }
+//                ContextChangedEvent.notifyChanged(name);
+//                new ContextModify(name + ":" + newValue).run();
+//            }
+//        }
+    }
+
+    public static synchronized void createThredProgram(long thredId, String thredName) {
+        ThredInfo thredInfo=new ThredInfo(new Long(thredId), thredName);
+        System.out.println("createThredProgram ok!");
+    }
+
+    /*
+        深拷贝上下文
+     */
+    public static HashMap<String, Context> copyContext(){
+        HashMap<String, Context> deepCopy=new HashMap<String, Context>();
+        deepCopy.putAll(GopContext.contexts);
+//        for(String key : GopContext.contexts.keySet()) {
+//            Context oldContext=GopContext.contexts.get(key);
+//            Context newContext=new Context(oldContext.getName(),oldContext.getValue(),oldContext.getModifiers());
+//            newContext.setType((oldContext.getType()));
+//            deepCopy.put(key,newContext);
+//        }
+        return deepCopy;
+    }
+
 }

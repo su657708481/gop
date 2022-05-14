@@ -12,11 +12,17 @@ public class GranuleOptions {
     //    enablePreloadThread：是否允许预加载粒技术
     public static final boolean enablePreloadThread = true;
     //    enableSearchTimeStat：
-    public static final boolean enableSearchTimeStat = true;
+    public static final boolean enableSearchTimeStat = false;
     //    enableAnalyseGranuleSub：
-    public static final boolean enableAnalyseGranuleSub = true;
+    public static final boolean enableAnalyseGranuleSub = false;
     //    enablePrintDebugInfo：
     public static final boolean enablePrintDebugInfo = false;
     //    enableMarkTime：是否允许标注时间，测试使用
     public static final boolean enableMarkTime = false;
+
+    // 多线程上下文、粒管理器测试输出
+    public static final boolean enableThredTestInfo = true;
+
+    // gop中间测试信息输出
+    public static final boolean enableGopTestInfo = true;
 }

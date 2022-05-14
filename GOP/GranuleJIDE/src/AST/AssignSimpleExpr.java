@@ -321,13 +321,13 @@ public class AssignSimpleExpr extends AssignExpr implements Cloneable {
 
 				       AbstractDot d = new AbstractDot(ta,pn);
 
-				       //多线程代码插装  第四个参数：线程名字
+				       // TODO多线程代码插装  第四个参数：线程名字
 //                       AbstractDot thredNameDot = new AbstractDot()
 //                       String getThredName=new String("getName");
 //                       MethodAccess getThredNameMethod = new MethodAccess(getThredName,new List<Expr>());
 
-				       StringLiteral para4=new StringLiteral("main");
-				       l.add(para4);
+//				       StringLiteral para4=new StringLiteral("main");
+//				       l.add(para4);
 
 				       MethodAccess m = new MethodAccess(methodname,l);
 				       d.replaceLast(m);
