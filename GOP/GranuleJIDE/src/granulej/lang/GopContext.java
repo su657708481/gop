@@ -265,6 +265,7 @@ public class GopContext {
     /*
         多线程gop：修改上下文，并记录是哪个线程发出的请求
      */
+
     public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers, long thredId) {
         modifyContext(name, seraializeObject(object), modifiers, thredId);
         object_cache.put(name, object);
@@ -294,6 +295,7 @@ public class GopContext {
                     System.out.println(thredInfo.getThredName()+"; contextName: " + name +"; oldValue: " + oldValue + "; newValue: " + newValue+";");
                 }
                 ct.setValue(newValue);
+                // 脏标记，线程level
                 thredInfo.contextChangedEvent.notifyChanged(name,thredInfo);
 //                ContextChangedEvent.notifyChanged(name);
                 // 没必要修改服务器上的上下文

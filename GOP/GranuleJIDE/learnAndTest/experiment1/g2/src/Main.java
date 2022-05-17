@@ -4,6 +4,11 @@ public class Main{
 
     public static void main(String[] args) {
 
+        
+        Long id=Thread.currentThread().getId();
+
+        System.out.println("MAIN:"+String.valueOf(id));
+
 
         ThredProgram1 program1 = new ThredProgram1();
 

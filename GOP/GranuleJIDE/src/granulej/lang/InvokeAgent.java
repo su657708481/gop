@@ -2,6 +2,7 @@ package granulej.lang;
 
 import granulej.gui.datastructure.ExecuteUnit;
 import granulej.gui.datastructure.GranuleUnit;
+import granulej.lang.mthred.ThredInfo;
 import gui.constant.GranuleConstant;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -61,6 +62,49 @@ public class InvokeAgent {
 */
 
     }
+
+    /*
+        多线程gop：对粒gName做适合性检查
+    */
+    public static <IN> boolean doFitness(String gName, long thredId) {
+
+		System.out.println("Multi Thred, in doFitness, "+String.valueOf(thredId));
+
+        long t0 = System.nanoTime();
+
+        // 如果是主线程
+        GranuleNode gn=null;
+        if(thredId==1){
+            gn = GranuleTree.getInstance().getGranuleNode(gName);
+        }
+        else{
+            gn = ThredInfo.getThredInfo(thredId).getGranuleNode(gName);
+        }
+
+        if (gn == null || gn.isRemoved()) {
+            lastGranules = null;
+            return false;
+        }
+
+        // 若允许脏技术的话，检查粒是否是脏粒。
+        // 如果不是脏粒，那么粒一定是适合的
+        if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus())
+            return true;
+
+        //记录下当前可能要处理的粒
+        lastGranules = null;
+        boolean result = fitnessChecking(gName);
+        long t1 = System.nanoTime();
+        if (GranuleOptions.enableAnalyseGranuleSub) {
+            System.out.println("fitness check:" + (t1 - t0));
+        }
+
+        return result;
+    }
+
+
+
+
 
     /*
         粒替换会后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
@@ -489,6 +533,7 @@ public class InvokeAgent {
 
     //TODO 这里遇到一个问题，适合性检查如果是检查当前粒的所有父粒是不是都是true的话，那么如果遇到中间粒为false，将导致粒树需要替换这个粒所有的子粒，
     //     使得替换对象时，需要更新所有粒对应的对象，这里存在不合理的问题,所以当前情况下，我只检查了当前粒的状态
+
 	/*
 		检查一个粒的适合性
 	 */
