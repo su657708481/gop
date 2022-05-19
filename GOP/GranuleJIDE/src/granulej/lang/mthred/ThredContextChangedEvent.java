@@ -40,6 +40,7 @@ public class ThredContextChangedEvent {
         多线程gop:上下文改变之后，将上下文监听的粒置为脏
      */
     public synchronized void notifyChanged(String contextName, ThredInfo thredInfo) {
+//        printLisener();
 
         if (!GranuleOptions.enableDirtyFlag) return;
         long t0;
@@ -53,6 +54,9 @@ public class ThredContextChangedEvent {
                 GranuleNode node = thredInfo.getGranuleNode(listener);
 //                GranuleNode node = GranuleTree.getInstance().getGranuleNode(listener);
                 if (node != null) {
+                    // TODO
+                    System.out.println("dirty: "+node.getGranuleName()+ " hashocde:"+String.valueOf(node.hashCode()) +"Name: "+String.valueOf(thredInfo.getThredName()) );
+
                     node.markDirty();
                     if (GranuleOptions.enablePreloadThread)
                         PreloadThread.getInstance().invalidateGranule(node);
@@ -64,5 +68,14 @@ public class ThredContextChangedEvent {
             long t1 = System.nanoTime();
             System.out.println("MarkTime:" + (t1 - t0));
         }
+    }
+
+    public void printLisener(){
+        System.out.print("ThredContextChangedEvent lisener: ");
+        for(String key:this.listeners.keySet()){
+            System.out.print(key+" ;");
+        }
+        System.out.println(";");
+
     }
 }

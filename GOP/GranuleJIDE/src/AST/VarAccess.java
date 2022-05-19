@@ -1207,11 +1207,20 @@ if(isFinal && num == state().boundariesCrossed) type_computed = true;
 				}
 		       else
 		       {*/
-		    	StringLiteral para3=new StringLiteral(convar.getModifiers().toString());
-			l.add(para3);	
+              StringLiteral para3=new StringLiteral(convar.getModifiers().toString());
+			  l.add(para3);
 		       //}
 
-		       ParseName pn = new ParseName(methodname);
+              /*
+                 多线程gop
+               */
+              Expr getThredId = new TypeAccess("Thread").
+                      qualifiesAccess(new MethodAccess("currentThread", new List<Expr>())).
+                      qualifiesAccess(new MethodAccess("getId", new List<Expr>()));
+               StringLiteral para4=new StringLiteral();
+               l.add(getThredId);
+
+               ParseName pn = new ParseName(methodname);
 		       AbstractDot d = new AbstractDot(ta,pn);
 		       MethodAccess m = new MethodAccess(methodname,l);
 		       d.replaceLast(m);

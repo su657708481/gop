@@ -24,10 +24,12 @@ public class InvokeAgent {
     private static ArrayList<String> lastGranules = null;
     private static HashMap<String, Class> loadedGranules = new HashMap<String, Class>();
     private static HashMap<String, Method> fitnessMethods = new HashMap<String, Method>();
-
+    // 多线程gop
+    private static HashMap<Long, ArrayList<String>> thredLastGranules = new HashMap<Long, ArrayList<String>>();
     /*
         对粒gName做适合性检查
      */
+
     public static <IN> boolean doFitness(String gName) {
 //		System.out.println("in doFitness");
         long t0 = System.nanoTime();
@@ -62,48 +64,6 @@ public class InvokeAgent {
 */
 
     }
-
-    /*
-        多线程gop：对粒gName做适合性检查
-    */
-    public static <IN> boolean doFitness(String gName, long thredId) {
-
-		System.out.println("Multi Thred, in doFitness, "+String.valueOf(thredId));
-
-        long t0 = System.nanoTime();
-
-        // 如果是主线程
-        GranuleNode gn=null;
-        if(thredId==1){
-            gn = GranuleTree.getInstance().getGranuleNode(gName);
-        }
-        else{
-            gn = ThredInfo.getThredInfo(thredId).getGranuleNode(gName);
-        }
-
-        if (gn == null || gn.isRemoved()) {
-            lastGranules = null;
-            return false;
-        }
-
-        // 若允许脏技术的话，检查粒是否是脏粒。
-        // 如果不是脏粒，那么粒一定是适合的
-        if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus())
-            return true;
-
-        //记录下当前可能要处理的粒
-        lastGranules = null;
-        boolean result = fitnessChecking(gName);
-        long t1 = System.nanoTime();
-        if (GranuleOptions.enableAnalyseGranuleSub) {
-            System.out.println("fitness check:" + (t1 - t0));
-        }
-
-        return result;
-    }
-
-
-
 
 
     /*
@@ -723,6 +683,262 @@ public class InvokeAgent {
     public static void printLog(String info) {
         System.out.println(info);
     }
+
+
+
+
+    /*
+        多线程gop：对粒gName做适合性检查
+    */
+
+    private static ExecuteUnit analyseExecuteUnit(Object obj, String gName, GranuleUnit unit, long thredId) {
+//		printLog("in ExecuteUnit");
+
+        // TODO
+        ArrayList<String> lGranules=selectLastGranules(thredId);
+
+        String className = obj.getClass().getName();
+        //是否在安全点
+        if (isSafePoint(className)) {
+            String shadowClassName = "";
+            try {
+//				System.out.println("lastGranules.get(0): "+lastGranules.get(0));
+//				System.out.println("unit.simiFileName: "+unit.simiFileName);
+//				System.out.println("simiGranule.getName(): "+unit.simiGranule.getName());
+                long t0 = System.nanoTime();
+                XmlParser.replaceGranuleTree(lGranules.get(0), unit.simiFileName, unit.simiGranule.getName());
+                long t1 = System.nanoTime();
+                System.out.println("replacetree:" + (t1 - t0));
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            return compositeAndTransfer(obj);
+
+        }
+
+//		System.out.println("class is not on the safePoint!");
+        return null;
+    }
+
+    public static ArrayList<String> selectLastGranules(long thredId){
+        ArrayList<String> lGranules=null;
+        if (thredId==1){
+            lGranules=lastGranules;
+        }
+        else{
+            lGranules=thredLastGranules.get((thredId));
+        }
+        return lGranules;
+    }
+
+
+    private static ArrayList<String> getDirtyParents(String gName,long thredId) {
+        ArrayList<String> result = new ArrayList<String>();
+        getDirtyParents(ThredInfo.getThredInfo(thredId).getGranuleNode(gName), result);
+        return result;
+    }
+
+    public static boolean fitnessChecking(String gName, long thredId) {
+//		printLog("in fitnessChecking");
+        //得到粒的父粒，挨个判断是否满足适合性条件
+        ArrayList<String> gParents = getDirtyParents(gName, thredId);//GranuleTree.getGranuleParents(gName, "root");
+        Collections.reverse(gParents);  // 翻转
+
+        //依次遍历粒树，挨个执行fitness函数
+        for (int i = 0; i < gParents.size(); ++i) {
+            //将粒load进来
+
+            String graName = gParents.get(i);
+
+            // 如果是主线程
+            GranuleNode gn=null;
+            if(thredId==1){
+                gn = GranuleTree.getInstance().getGranuleNode(graName);
+            }
+            else{
+                gn = ThredInfo.getThredInfo(thredId).getGranuleNode(graName);
+            }
+
+            //不是脏粒跳过
+            if (!gn.isDirty() && gn.getStatus())
+                continue;
+
+            Method fitMethod = fitnessMethods.get(graName);
+            if (fitMethod == null) {
+                Class granule = GranuleLoader.loadGranule(graName);
+                loadedGranules.put(graName, granule);
+
+                try {
+                    fitMethod = granule.getDeclaredMethod("fitness");
+                } catch (Exception e) {
+                    printLog("get fitness method failed！！");
+                    e.printStackTrace();
+                }
+                try {
+                    //先将fitness方法的访问权限去掉，然后再执行
+                    fitMethod.setAccessible(true);
+                    fitnessMethods.put(graName, fitMethod);
+//					printLog("fitness result of "+granule.getName()+": "+result);
+                } catch (Exception e) {
+                    printLog("execute fitness method failed!");
+                    e.printStackTrace();
+                }
+            }
+
+            if (!executeFitness(fitMethod)) {
+                if (thredId==1){
+                    lastGranules = new ArrayList<String>(gParents.subList(i, gParents.size()));
+                }
+                else{
+                    thredLastGranules.put(thredId, new ArrayList<String>(gParents.subList(i, gParents.size())));
+                }
+                gn.setStatus(false);
+                gn.clearDirty();
+                return false;
+            } else {
+                gn.clearDirty();
+                gn.setStatus(true);
+            }
+        }
+
+        //System.out.println("final result of "+gName+": true");
+        return true;
+    }
+
+    public static <IN> boolean doFitness(String gName, long thredId) {
+
+        long t0 = System.nanoTime();
+
+        // 如果是主线程
+        GranuleNode gn=null;
+        if(thredId==1){
+            gn = GranuleTree.getInstance().getGranuleNode(gName);
+        }
+        else{
+            gn = ThredInfo.getThredInfo(thredId).getGranuleNode(gName);
+        }
+
+        if (gn == null || gn.isRemoved()) {
+            lastGranules = null;
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(false)+" 1");
+            return false;
+        }
+
+        // 若允许脏技术的话，检查粒是否是脏粒。
+        // 如果不是脏粒，那么粒一定是适合的
+        if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus()){
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(true)+" 2");
+            return true;
+        }
+
+        //记录下当前可能要处理的粒
+        lastGranules = null;
+        boolean result = fitnessChecking(gName, thredId);
+        long t1 = System.nanoTime();
+        if (GranuleOptions.enableAnalyseGranuleSub) {
+            System.out.println("fitness check:" + (t1 - t0));
+        }
+        System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(result)+" 3");
+        return result;
+    }
+
+
+    public static <IN, OUT> OUT replaceMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, long thredId) {
+
+//		printLog("in replaceMethod");
+        // TODO
+        ArrayList<String> lGranules=selectLastGranules(thredId);
+
+        ExecuteUnit exeUnit;
+        long t0 = 0, t1 = 0;
+        if (lastGranules == null) {
+            exeUnit = compositeAndTransfer(obj);
+        } else {
+            t0 = System.nanoTime();
+            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules);
+
+            if (granuleUnit == null) {
+                System.out.println("can't find similar granule!!!");
+                return null;
+            }
+            t1 = System.nanoTime();
+            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit,thredId);
+            if (exeUnit == null) {
+                System.out.println("can't find new execute method!!!");
+                return null;
+            }
+        }
+        long t2 = System.nanoTime();
+        //执行新对象的函数,并将新的对象更新到对象列表中
+        Object result = executeShadowClassMethod(exeUnit.newInstance, exeUnit.newClass, methodName, argsTypes, args);
+        long t3 = System.nanoTime();
+        ObjectAgent.updateObject(obj.hashCode(), exeUnit.newInstance);
+        long t4 = System.nanoTime();
+        if (lGranules != null)
+            new Thread(new xmlFileUpdate(IndividualInfo.getInstance().getConfigfile(), "cTree")).start();
+        long t5 = System.nanoTime();
+        if (GranuleOptions.enableAnalyseGranuleSub) {
+            System.out.println("search: " + (t1 - t0));
+            System.out.println("analyse: " + (t2 - t1));
+            System.out.println("exec: " + (t3 - t2));
+            System.out.println("update: " + (t4 - t3));
+            System.out.println("xml: " + (t5 - t4));
+            System.out.println("sum: " + (t5 - t0));
+        }
+
+        ObjectAgent.invalidCache();
+        return (OUT) result;
+    }
+
+    public static <IN> void replaceVoidMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args,long thredId) {
+//		printLog("in replaceVoidMethod");
+
+        // TODO
+        ArrayList<String> lGranules=selectLastGranules(thredId);
+
+        ExecuteUnit exeUnit;
+        long t0 = 0, t1 = 0;
+        if (lGranules == null) {
+            exeUnit = compositeAndTransfer(obj);
+        } else {
+            t0 = System.nanoTime();
+            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules);
+            if (granuleUnit == null) {
+                System.out.println("can't find similar granule!!!");
+                return;
+            }
+            t1 = System.nanoTime();
+            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit,thredId);
+
+            if (exeUnit == null) {
+                System.out.println("can't find new execute method!!!");
+                return;
+            }
+        }
+
+//		//执行新对象的函数，并将新的对象更新到对象列表中
+        long t2 = System.nanoTime();
+        executeShadowClassMethod(exeUnit.newInstance, exeUnit.newClass, methodName, argsTypes, args);
+        long t3 = System.nanoTime();
+        ObjectAgent.updateObject(obj.hashCode(), exeUnit.newInstance);
+        long t4 = System.nanoTime();
+        if (lastGranules != null)
+            new Thread(new xmlFileUpdate(IndividualInfo.getInstance().getConfigfile(), "cTree")).start();
+        long t5 = System.nanoTime();
+        if (GranuleOptions.enableAnalyseGranuleSub) {
+            System.out.println("search: " + (t1 - t0));
+            System.out.println("analyse: " + (t2 - t1));
+            System.out.println("exec: " + (t3 - t2));
+            System.out.println("update: " + (t4 - t3));
+            System.out.println("xml: " + (t5 - t4));
+            System.out.println("sum: " + (t5 - t0));
+        }
+        ObjectAgent.invalidCache();
+    }
+
+
 
     public static void main(String args[]) {
         System.out.println(getGranuleName("InvokeAgent_AD"));

@@ -52,6 +52,10 @@ public class ContextPublish {
 				if (!constr.isEmpty()) {
 					flag = false;
 				}
+				// ÐÞ¸´bug:È¥³ý»»ÐÐ
+//				System.out.println("debugPublish1: |"+constr+"|;" );
+				constr=constr.replace("\n","").replace("\r","");
+//				System.out.println("debugPublish2: |"+constr+"|;" );
 			}
 			updateContextInitValue(constr);
 			socketPut.close();
@@ -78,7 +82,7 @@ public class ContextPublish {
 				}
 				else {
 					context = contexts[i].split(":");
-				}               
+				}
 			    GopContext.modifyContext(context[0], context[1]);
 			}
 		}

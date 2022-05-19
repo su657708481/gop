@@ -86,4 +86,31 @@ public class ContextChangedEvent {
             System.out.println("MarkTime:" + (t1 - t0));
         }
     }
+
+    /*
+        ∂‡œﬂ≥Ãgop
+     */
+    public static Map<String, List<String>> copyListeners(){
+//        printLisener();
+        Map<String, List<String>> deepCopy=new HashMap<String, List<String>>();
+        for(String key:ContextChangedEvent.listeners.keySet()){
+            List<String> newlist= new ArrayList<String>();
+            for(String l:ContextChangedEvent.listeners.get(key)){
+                newlist.add(l);
+            }
+            deepCopy.put(key,newlist);
+        }
+        return deepCopy;
+    }
+
+    public static void printLisener(){
+        System.out.print("ContextChangedEvent lisener: ");
+        for(String key:ContextChangedEvent.listeners.keySet()){
+            System.out.print(key+" : "+ContextChangedEvent.listeners.get(key).get(0)  +";");
+        }
+        System.out.println(";");
+
+    }
+
+
 }

@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
  */
 public class ObjectAgent {
+
     private static int serialNum = 0;
     private static HashMap<Integer, Object> objectList = new HashMap<Integer, Object>();
     private static ArrayList<Integer> hashCodeList = new ArrayList<Integer>();

@@ -1,9 +1,6 @@
 package granulej.lang.mthred;
 
-import granulej.lang.Context;
-import granulej.lang.GopContext;
-import granulej.lang.GranuleNode;
-import granulej.lang.GranuleTree;
+import granulej.lang.*;
 
 import java.util.HashMap;
 
@@ -45,6 +42,8 @@ public class ThredInfo {
         this.contexts=GopContext.copyContext();
         // 拷贝主线程粒树到当前环境
         this.treeNodeMaps=GranuleTree.copyGranuleTree();
+        // 拷贝上下文-粒的监听关系
+        contextChangedEvent.listeners= ContextChangedEvent.copyListeners();
     }
 
 
@@ -76,6 +75,11 @@ public class ThredInfo {
 
 
     public static void main(String[] args) {
+
+        String newValue =new String("value1");
+        String oldValue =new String("value1");
+        System.out.println( newValue.equals(oldValue) );
+        System.out.println( newValue==oldValue );
 
         HashMap<Long, String> hash = new HashMap<Long, String>();
         hash.put(new Long(-1),"test1");

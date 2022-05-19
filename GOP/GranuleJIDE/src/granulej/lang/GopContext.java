@@ -50,6 +50,7 @@ public class GopContext {
             return "";
     }
 
+
     public static byte[] base64Decode(String data) {
         int[] tbl = {
                 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -266,6 +267,27 @@ public class GopContext {
         多线程gop：修改上下文，并记录是哪个线程发出的请求
      */
 
+    public static synchronized String getContext(String name, String modifiers, long thredId) {
+
+        System.out.println("getContext multiThred");
+
+        HashMap<String, Context> curContext=null;
+        if (thredId==1){
+            curContext=contexts;
+        }
+        else{
+            curContext=ThredInfo.getThredInfo(thredId).contexts;
+        }
+        if (curContext.containsKey(name)) {
+            Context cn = curContext.get(name);
+            if (cn != null && cn.getValue() != null) {
+                return cn.getValue().trim();
+            }
+            return "";
+        } else
+            return "";
+    }
+
     public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers, long thredId) {
         modifyContext(name, seraializeObject(object), modifiers, thredId);
         object_cache.put(name, object);
@@ -278,6 +300,7 @@ public class GopContext {
 
         if (thredInfo.contexts.containsKey(name)) {
             Context ct = (Context) thredInfo.contexts.get(name);
+
             if (modifiers != null && !modifiers.equals("") && !modifiers.equals(ct.getModifiers()))
                 ct.setModifiers(modifiers);
             //修改值
@@ -292,7 +315,7 @@ public class GopContext {
                     newValue = null;
                 if (GranuleOptions.enableGopTestInfo){
                     String oldValue=ct.getValue();
-                    System.out.println(thredInfo.getThredName()+"; contextName: " + name +"; oldValue: " + oldValue + "; newValue: " + newValue+";");
+                    System.out.println(thredInfo.getThredName()+", " + name +"; " + oldValue + "->" + newValue);
                 }
                 ct.setValue(newValue);
                 // 脏标记，线程level
@@ -333,13 +356,20 @@ public class GopContext {
         深拷贝上下文
      */
     public static HashMap<String, Context> copyContext(){
+          // 测试新拷贝
+//        for (String dc:GopContext.contexts.keySet()){
+//            System.out.println("key1: "+dc+"; value: "+String.valueOf(GopContext.contexts.get(dc).hashCode()));
+//        }
         HashMap<String, Context> deepCopy=new HashMap<String, Context>();
-        deepCopy.putAll(GopContext.contexts);
-//        for(String key : GopContext.contexts.keySet()) {
-//            Context oldContext=GopContext.contexts.get(key);
-//            Context newContext=new Context(oldContext.getName(),oldContext.getValue(),oldContext.getModifiers());
-//            newContext.setType((oldContext.getType()));
-//            deepCopy.put(key,newContext);
+//        deepCopy.putAll(GopContext.contexts);
+        for(String key : GopContext.contexts.keySet()) {
+            Context oldContext=GopContext.contexts.get(key);
+            Context newContext=new Context(oldContext.getName(),oldContext.getValue(),oldContext.getModifiers());
+            newContext.setType((oldContext.getType()));
+            deepCopy.put(key,newContext);
+        }
+//        for (String dc:deepCopy.keySet()){
+//            System.out.println("key2: "+dc+"; value: "+String.valueOf(deepCopy.get(dc).hashCode()));
 //        }
         return deepCopy;
     }

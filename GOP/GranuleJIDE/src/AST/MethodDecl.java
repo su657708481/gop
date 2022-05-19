@@ -3700,10 +3700,10 @@ public class MethodDecl extends MemberDecl implements Cloneable, SimpleSet, Iter
                 多线程gop TODO, 回传对象
              */
 //            list.add(tisexpr);
-            Expr getLatestObject = new TypeAccess("Thread").
+            Expr getThredId = new TypeAccess("Thread").
                     qualifiesAccess(new MethodAccess("currentThread", new List<Expr>())).
                     qualifiesAccess(new MethodAccess("getId", new List<Expr>()));
-            list.add(getLatestObject);
+            list.add(getThredId);
 
 
 //            System.out.println("test2:"+Thread.currentThread().getName());
@@ -3755,6 +3755,12 @@ public class MethodDecl extends MemberDecl implements Cloneable, SimpleSet, Iter
             } else {
                 l.add(new ArrayCreationExpr(typeAccess, new Opt(new ArrayInit(args))));
             }
+
+            /*
+                多线程gop TODO, 回传对象
+             */
+            l.add(getThredId);
+            //
 
             MethodAccess mr = new MethodAccess(mrep, l);
             Access dr = ta.qualifiesAccess(mr);

@@ -44,6 +44,15 @@ public class GranuleNode {
         children = new LinkedList<GranuleNode>();
         initGranuleStatus();
     }
+    /*
+        多线程gop
+     */
+    public GranuleNode(GranuleNode old) {
+        this.granuleName = old.granuleName;
+        this.root_class = old.root_class;
+        children = new LinkedList<GranuleNode>();
+        initGranuleStatus();
+    }
 
     public void setRootClass(String cname) {
         this.root_class = cname;

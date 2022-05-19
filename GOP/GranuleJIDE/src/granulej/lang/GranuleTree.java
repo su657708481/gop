@@ -316,9 +316,34 @@ public class GranuleTree {
     /*
         多线程gop: 深拷贝粒树
      */
+
+    public static void dfs(GranuleNode oldRoot, GranuleNode newRoot, HashMap<String, GranuleNode> deepCopy){
+        for(GranuleNode child : oldRoot.getAllChildren()) {
+//            System.out.println("dfs: "+child.getGranuleName());
+            GranuleNode newChild = new GranuleNode(child);
+            newRoot.addChild(newChild);
+            newChild.setGranuleParent(newRoot);
+            deepCopy.put(newChild.getGranuleName(),newChild);
+            dfs(child, newChild,deepCopy);
+        }
+    }
+
     public static HashMap<String, GranuleNode> copyGranuleTree(){
+        // 测试新拷贝
+
+//        for (String dc:GranuleTree.treeNodeMaps.keySet()){
+//            System.out.println("key1: "+dc+"; value: "+String.valueOf(GranuleTree.treeNodeMaps.get(dc).hashCode()) +"; granule:"+ GranuleTree.treeNodeMaps.get(dc).getGranuleName());
+//        }
         HashMap<String, GranuleNode> deepCopy=new HashMap<String, GranuleNode>();
-        deepCopy.putAll(GranuleTree.treeNodeMaps);
+
+        GranuleNode oldGranule=GranuleTree.treeNodeMaps.get("g0");
+        GranuleNode newRoot=new GranuleNode(oldGranule);
+        deepCopy.put("g0",newRoot);
+        dfs(GranuleTree.treeNodeMaps.get("g0"), newRoot, deepCopy);
+
+//        for (String dc:deepCopy.keySet()){
+//            System.out.println("key2: "+dc+"; value: "+String.valueOf(deepCopy.get(dc).hashCode()));
+//        }
         return deepCopy;
     }
 

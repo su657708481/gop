@@ -10,7 +10,7 @@ public class GranuleOptions {
     //    enableRewriteNew：
     public static final boolean enableRewriteNew = true;
     //    enablePreloadThread：是否允许预加载粒技术
-    public static final boolean enablePreloadThread = true;
+    public static final boolean enablePreloadThread = false;
     //    enableSearchTimeStat：
     public static final boolean enableSearchTimeStat = false;
     //    enableAnalyseGranuleSub：
