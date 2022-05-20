@@ -260,6 +260,7 @@ public class InvokeAgent {
 		组合新类并迁移到新对象
      */
     private static ExecuteUnit compositeAndTransfer(Object obj) {
+        System.out.println("compositeAndTransfer");
         long t0 = System.nanoTime();
         Class newClass = ObjectAgent.compositeShadowForClass(obj.getClass());
         if (newClass == null) {
@@ -286,9 +287,9 @@ public class InvokeAgent {
      */
     private static ExecuteUnit analyseExecuteUnit(Object obj, String gName, GranuleUnit unit) {
 //		printLog("in ExecuteUnit");
-		String className = obj.getClass().getName();
-		//是否在安全点
-		if (isSafePoint(className)) {
+        String className = obj.getClass().getName();
+        //是否在安全点
+        if (isSafePoint(className)) {
             String shadowClassName = "";
             try {
 //				System.out.println("lastGranules.get(0): "+lastGranules.get(0));
@@ -353,7 +354,7 @@ public class InvokeAgent {
 //		printLog("class:"+cls.getName());
         Method method = getMethod(cls, methodName, argsTypes);
         if (method == null) {
-            printLog(methodName + "get method failed" + "  ! in method of executeShadowClassMethod");
+            printLog(methodName + " get method failed" + "  ! in method of executeShadowClassMethod");
             return null;
         }
 
@@ -363,7 +364,7 @@ public class InvokeAgent {
             method.setAccessible(true);
             result = method.invoke(obj, args);
         } catch (Exception e) {
-            printLog(methodName + "execute method failed" + "  ! in method of executeShadowClassMethod");
+            printLog(methodName + " execute method failed" + "  ! in method of executeShadowClassMethod");
             printLog(e.toString());
         }
 
@@ -396,7 +397,7 @@ public class InvokeAgent {
         //接下来该转换类的状态和对象，对应vs中的translateClassState()
         Class oldClass = oldObject.getClass();
 
-		//System.out.println("start transfer class and object!");
+        //System.out.println("start transfer class and object!");
 
         //生成新的对象
         Object resObj = null;
@@ -494,9 +495,9 @@ public class InvokeAgent {
     //TODO 这里遇到一个问题，适合性检查如果是检查当前粒的所有父粒是不是都是true的话，那么如果遇到中间粒为false，将导致粒树需要替换这个粒所有的子粒，
     //     使得替换对象时，需要更新所有粒对应的对象，这里存在不合理的问题,所以当前情况下，我只检查了当前粒的状态
 
-	/*
-		检查一个粒的适合性
-	 */
+    /*
+        检查一个粒的适合性
+     */
     public static boolean fitnessChecking(String gName) {
 //		printLog("in fitnessChecking");
         //得到粒的父粒，挨个判断是否满足适合性条件
@@ -692,10 +693,10 @@ public class InvokeAgent {
     */
 
     private static ExecuteUnit analyseExecuteUnit(Object obj, String gName, GranuleUnit unit, long thredId) {
-//		printLog("in ExecuteUnit");
+		printLog("in ExecuteUnit analyseExecuteUnit");
 
         // TODO
-        ArrayList<String> lGranules=selectLastGranules(thredId);
+        ArrayList<String> lGranules = selectLastGranules(thredId);
 
         String className = obj.getClass().getName();
         //是否在安全点
@@ -706,7 +707,8 @@ public class InvokeAgent {
 //				System.out.println("unit.simiFileName: "+unit.simiFileName);
 //				System.out.println("simiGranule.getName(): "+unit.simiGranule.getName());
                 long t0 = System.nanoTime();
-                XmlParser.replaceGranuleTree(lGranules.get(0), unit.simiFileName, unit.simiGranule.getName());
+                // TODO
+                XmlParser.replaceGranuleTree(lGranules.get(0), unit.simiFileName, unit.simiGranule.getName(), thredId);
                 long t1 = System.nanoTime();
                 System.out.println("replacetree:" + (t1 - t0));
             } catch (Exception e) {
@@ -722,19 +724,18 @@ public class InvokeAgent {
         return null;
     }
 
-    public static ArrayList<String> selectLastGranules(long thredId){
-        ArrayList<String> lGranules=null;
-        if (thredId==1){
-            lGranules=lastGranules;
-        }
-        else{
-            lGranules=thredLastGranules.get((thredId));
+    public static ArrayList<String> selectLastGranules(long thredId) {
+        ArrayList<String> lGranules = null;
+        if (thredId == 1) {
+            lGranules = lastGranules;
+        } else {
+            lGranules = thredLastGranules.get((thredId));
         }
         return lGranules;
     }
 
 
-    private static ArrayList<String> getDirtyParents(String gName,long thredId) {
+    private static ArrayList<String> getDirtyParents(String gName, long thredId) {
         ArrayList<String> result = new ArrayList<String>();
         getDirtyParents(ThredInfo.getThredInfo(thredId).getGranuleNode(gName), result);
         return result;
@@ -753,11 +754,10 @@ public class InvokeAgent {
             String graName = gParents.get(i);
 
             // 如果是主线程
-            GranuleNode gn=null;
-            if(thredId==1){
+            GranuleNode gn = null;
+            if (thredId == 1) {
                 gn = GranuleTree.getInstance().getGranuleNode(graName);
-            }
-            else{
+            } else {
                 gn = ThredInfo.getThredInfo(thredId).getGranuleNode(graName);
             }
 
@@ -788,10 +788,9 @@ public class InvokeAgent {
             }
 
             if (!executeFitness(fitMethod)) {
-                if (thredId==1){
+                if (thredId == 1) {
                     lastGranules = new ArrayList<String>(gParents.subList(i, gParents.size()));
-                }
-                else{
+                } else {
                     thredLastGranules.put(thredId, new ArrayList<String>(gParents.subList(i, gParents.size())));
                 }
                 gn.setStatus(false);
@@ -812,24 +811,23 @@ public class InvokeAgent {
         long t0 = System.nanoTime();
 
         // 如果是主线程
-        GranuleNode gn=null;
-        if(thredId==1){
+        GranuleNode gn = null;
+        if (thredId == 1) {
             gn = GranuleTree.getInstance().getGranuleNode(gName);
-        }
-        else{
+        } else {
             gn = ThredInfo.getThredInfo(thredId).getGranuleNode(gName);
         }
 
         if (gn == null || gn.isRemoved()) {
             lastGranules = null;
-            System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(false)+" 1");
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(false) + " 1");
             return false;
         }
 
         // 若允许脏技术的话，检查粒是否是脏粒。
         // 如果不是脏粒，那么粒一定是适合的
-        if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus()){
-            System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(true)+" 2");
+        if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus()) {
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(true) + " 2");
             return true;
         }
 
@@ -840,7 +838,7 @@ public class InvokeAgent {
         if (GranuleOptions.enableAnalyseGranuleSub) {
             System.out.println("fitness check:" + (t1 - t0));
         }
-        System.out.println(ThredInfo.getThredInfo(thredId).getThredName()+" in doFitness, "+String.valueOf(result)+" 3");
+        System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(result) + " 3");
         return result;
     }
 
@@ -849,7 +847,7 @@ public class InvokeAgent {
 
 //		printLog("in replaceMethod");
         // TODO
-        ArrayList<String> lGranules=selectLastGranules(thredId);
+        ArrayList<String> lGranules = selectLastGranules(thredId);
 
         ExecuteUnit exeUnit;
         long t0 = 0, t1 = 0;
@@ -864,7 +862,7 @@ public class InvokeAgent {
                 return null;
             }
             t1 = System.nanoTime();
-            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit,thredId);
+            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit, thredId);
             if (exeUnit == null) {
                 System.out.println("can't find new execute method!!!");
                 return null;
@@ -892,25 +890,33 @@ public class InvokeAgent {
         return (OUT) result;
     }
 
-    public static <IN> void replaceVoidMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args,long thredId) {
-//		printLog("in replaceVoidMethod");
+    public static <IN> void replaceVoidMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, long thredId) {
+		printLog("replaceVoidMethod");
 
         // TODO
-        ArrayList<String> lGranules=selectLastGranules(thredId);
+        ArrayList<String> lGranules = selectLastGranules(thredId);
 
         ExecuteUnit exeUnit;
         long t0 = 0, t1 = 0;
         if (lGranules == null) {
+            System.out.println("lGranules is null!");
             exeUnit = compositeAndTransfer(obj);
+
         } else {
+            System.out.println("lGranules not null!");
             t0 = System.nanoTime();
             GranuleUnit granuleUnit = searchForSimilarGranule(lGranules);
+
+            // TODO
+            granuleUnit.print();
+
             if (granuleUnit == null) {
                 System.out.println("can't find similar granule!!!");
                 return;
             }
             t1 = System.nanoTime();
-            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit,thredId);
+            exeUnit = analyseExecuteUnit(obj, gName, granuleUnit, thredId);
+            printLog("compositeAndTransfer over ");
 
             if (exeUnit == null) {
                 System.out.println("can't find new execute method!!!");
@@ -939,9 +945,14 @@ public class InvokeAgent {
     }
 
 
-
     public static void main(String args[]) {
-        System.out.println(getGranuleName("InvokeAgent_AD"));
+//        System.out.println(getGranuleName("InvokeAgent_AD"));
+        try {
+            String out=Class.forName("InvokeAgent").getSimpleName();
+            System.out.println(out);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
 }

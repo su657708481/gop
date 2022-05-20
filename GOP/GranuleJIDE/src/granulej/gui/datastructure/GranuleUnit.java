@@ -13,4 +13,8 @@ public class GranuleUnit{
 		this.simiGranule=simiGranule;
 		//this.currentGranule=currentGranule;
 	}
+
+	public void print(){
+		System.out.println(simiGranule.getName() +" * " + simiFileName);
+	}
 }

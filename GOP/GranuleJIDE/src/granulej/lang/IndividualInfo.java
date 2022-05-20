@@ -10,6 +10,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 	个体演化信息
  */
 public class IndividualInfo {
+
 	private String configfile="TestGranule.xml";
 
 	private String md5;

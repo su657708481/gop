@@ -84,6 +84,7 @@ public class GranulePolling {
         GranuleSearch gs = new GranuleSearch(s_packet);
         gs.SimilarLookup();
         GranulePolling gp = GranulePolling.getInstance();
+
         Class simi_g = gp.getSimilarGranuleClass(gs.getLookupResult());
 
 //		System.out.println("Similar granule is :"+simi_g);

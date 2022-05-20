@@ -1,5 +1,6 @@
 package granulej.lang;
 
+import granulej.lang.mthred.ThredInfo;
 import org.w3c.dom.*;
 
 import java.util.*;
@@ -41,7 +42,6 @@ public class XmlParser {
     private int number;
 
     private String m_map;
-
 
     // 用于收集子树节点的粒
     private static ArrayList<String> sub_tree_items = new ArrayList<String>();
@@ -225,6 +225,7 @@ public class XmlParser {
     }
 
     // 粒树演化--粒树替换
+
     public static void replaceGranuleTree(String gname, String similar_file, String similar_gname) throws Exception {
         try {
             XmlParser xpar = XmlParser.getInstance();
@@ -1087,6 +1088,155 @@ public class XmlParser {
 
     public void setNumber(int number) {
         this.number = number;
+    }
+
+
+
+
+
+
+    /*
+        多线程gop
+     */
+
+    // TODO
+    public static void updateGranuleTreeNode(Node simi_node, GranuleNode parent, long thredId) {
+        GranuleNode gn = null;
+        String node_name = "";
+        String root_name = "";
+        if (simi_node.getNodeType() == Node.ELEMENT_NODE) {
+            if (simi_node.getNodeName().equals("granule")) {
+                if (simi_node.hasAttributes()) {
+                    node_name = simi_node.getAttributes().getNamedItem("name").getNodeValue();
+                    root_name = simi_node.getAttributes().getNamedItem("class").getNodeValue();
+                    gn = new GranuleNode(node_name, root_name, parent);
+                    if (thredId==1){
+                        GranuleTree.getInstance().addGranuleNode(gn);
+                    }
+                    else{
+                        ThredInfo.getThredInfo(thredId).addGranuleNode(gn);
+                    }
+                    String context_name = simi_node.getAttributes().getNamedItem("context").getNodeValue();
+
+                    ContextChangedEvent.addListener(context_name, node_name);
+
+                    if (!GopContext.getContexts().containsKey(context_name)) {
+                        if (!con_seq.equals(""))
+                            con_seq = con_seq + ";" + context_name;
+                        else
+                            con_seq = context_name;
+                    }
+                }
+            }
+        }
+        for (Node child = simi_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+            parent = gn;
+            updateGranuleTreeNode(child, parent);
+        }
+    }
+
+    public static void updateGranuleSubTree(String gname, Node simi_node, long thredId) {
+        if (gname != null) {
+            GranuleNode parent = null;
+            if (thredId==1){
+                parent = GranuleTree.getInstance().getDelParentNode(gname);
+            }
+            else{
+                parent = ThredInfo.getThredInfo(thredId).getDelParentNode(gname);
+            }
+            updateGranuleTreeNode(simi_node, parent, thredId);
+        }
+    }
+
+    // TODO
+    public static void replaceGranuleTree(String gname, String similar_file, String similar_gname, long thredId) throws Exception {
+        try {
+            XmlParser xpar = XmlParser.getInstance();
+
+            String file = IndividualInfo.getInstance().getConfigfile();
+
+            if (xpar.doc == null) {
+                xpar.doc = xmlUtil.load(file);
+            }
+            Node gnode = lookupXmlNode(xpar.doc, gname);
+
+            // 相似文件和相似粒节点
+            xpar.similar_doc = ReceivePacket.getInstance().getSimilarFileDom();
+            if (xpar.similar_doc == null) {
+                xpar.similar_doc = xmlUtil.load(similar_file);
+            }
+            tarPath = similar_file;
+
+            Node simi_node = ReceivePacket.getInstance().getSimilarGranuleNode();
+            if (simi_node == null) {
+                simi_node = lookupXmlNode(xpar.similar_doc, similar_gname);
+            }
+
+            connect_shadows = new ArrayList<String>();
+
+            // 创建相似粒节点
+            if (gnode != null && simi_node != null) {
+                Element el = xpar.doc.createElement("granule");
+                if (simi_node.hasAttributes()) {
+                    NamedNodeMap attrs = simi_node.getAttributes();
+                    int length = attrs.getLength();
+                    String attrs_name = "";
+                    String attrs_value = "";
+                    for (int i = 0; i < length; i++) {
+                        attrs_name = attrs.item(i).getNodeName();
+                        attrs_value = attrs.item(i).getNodeValue();
+                        el.setAttribute(attrs_name, attrs_value);
+                        if (attrs_name.equals("name")) {
+                            if (!sub_tree_items.contains(attrs_value))
+                                sub_tree_items.add(attrs_value);
+                        }
+                    }
+                }
+                int index = similar_file.lastIndexOf(File.separator);
+                String loadPath = similar_file.substring(0, index > 0 ? index : 0);
+                if (GranuleOptions.enablePrintDebugInfo)
+                    System.out.println(loadPath);
+                GranuleLoader.addLoadPath(loadPath);
+                GranuleTree.getInstance().Iterator();
+
+                //在相似粒节点之前插入一个新的节点
+                gnode.getParentNode().insertBefore(el, gnode);
+                removeSubTree(gnode);
+
+                // 添加子树
+                updateGranuleSubTree(gname, simi_node, thredId);
+                //GranuleTree.getInstance().IteratorParents(similar_gname);
+                //IteratorHashMap();
+
+                addSimilarGranuleToList(simi_node);
+//				System.out.println("simi_node: "+simi_node.getNodeName());
+                addXmlNode(simi_node, el, simi_node);
+                removeFileNamesFromSubIterms();
+                xmlUtil.copyByteFiles(getCurrentDirectory(), getTargetGranulePath(similar_file), sub_tree_items);
+
+                //IteratorMethodHashMap();
+                //更新方法映射表
+                //updateMethodMapShadowes(file, similar_file);
+                //System.out.println("update is starting is :");
+                updateMethodMapShadowes(file, similar_file);
+                //IteratorMethodHashMap();
+
+                //设置个体的MD5号
+                IndividualInfo.getInstance().setMd5(getNewIndividualMd5Code(xpar.doc.getDocumentElement()));
+
+                //演化的程序版本号
+                setEnvolutionVersion();
+
+                if (!con_seq.equals("")) {
+                    new Thread(new ContextRepUpdate(con_seq)).start();
+                }
+
+                xpar.register(xpar);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

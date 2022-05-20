@@ -135,14 +135,23 @@ public class ObjectAgent {
             }
 
             ArrayList<String> shadows = doc.lookupShadowsOfClass(lastClassName);
+
+            // todo debug
+            for (String d:shadows){
+                System.out.println("debug objectagent: "+d + "; "+ String.valueOf(shadows.size()));
+            }
             String shadowClassName = "";
             if (shadows.size() == 0)
                 return lastClass;
             else if (shadows.size() == 1) {
-                if (shadows.get(0).equals(clazz.getSimpleName()))
+                if (shadows.get(0).equals(clazz.getSimpleName())){
+                    System.out.println("debug compositeShadowForClass same");
                     return clazz;
-                else
+                }
+                else{
+                    System.out.println(clazz.getSimpleName()+" | "+Class.forName(shadows.get(0)).getSimpleName());
                     return Class.forName(shadows.get(0));
+                }
             } else {
                 String parentId = lastClassName;
                 String gNamePreMd5 = lastClassName;
