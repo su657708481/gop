@@ -67,6 +67,105 @@ public class InvokeAgent {
 
 
     /*
+        查找相似粒功能
+     */
+    private static GranuleUnit searchForSimilarGranule(ArrayList<String> gNames) {
+        if (GranuleOptions.enablePreloadThread)
+        {
+            return PreloadThread.getInstance().searchForSimilarGranule(gNames);
+        }
+
+        long t0 = System.nanoTime();
+        //如果当前粒为空，那就没法替换
+        if (gNames == null || gNames.size() == 0)
+            return null;
+
+        Object[] similarGra = GranulePolling.getInstance().getPollingResult(gNames.get(0), 0);
+        if (similarGra[1].equals(GranuleConstant.GRANULE_NOT_EXIST)) {
+            System.out.println("no similar granule on granule server!!!");
+            return null;
+        }
+
+        Class simiGranule = (Class) similarGra[0];
+        String simiFileName = (String) similarGra[1];
+
+        boolean isFit = executeGranule(simiGranule);
+        // TODO
+        System.out.println("find similar granule: " + simiGranule + " " + isFit);
+
+        GranuleUnit unit = new GranuleUnit(simiGranule, null, simiFileName);
+
+        long t1 = System.nanoTime();
+        if (GranuleOptions.enableSearchTimeStat)
+            System.out.println("SearchTime: " + (t1 - t0));
+        return unit;
+
+        //查找并执行相似粒，直到找到合适的粒为止
+
+        //Class currentGranule = null;
+/*
+		while(simiGranule==null||simiFileName==null||currentGranule==null)
+		{
+
+
+			boolean isFit = true;
+			for(int j=gNames.size()-1;j>=0&&isFit;--j)
+			{
+				 String gName = gNames.get(j);
+				 //TODO 这里如果在服务器上实在找不到粒，应该跳出去，但现在的服务器没有处理这种情况，找不到就一直找
+//				 System.out.println("gName: "+gName);
+	             Object [] similarGra=GranulePolling.getInstance().getPollingResult(gName,0);
+//	             System.out.println(similarGra[1]);
+	             //此处用于测试排除网络部分的执行效率
+//				 Object [] similarGra = new Object[2];
+//				 similarGra[0] = loadedGranules.get(gName+"2");
+//				 if(similarGra[0]==null)
+//					 System.out.println("granule is null");
+//				 similarGra[1] = "C:/Users/Administrator/Downloads/GranuleJIDE/example/Test_1/bin/TestGranuleTree.xml";
+	             if(similarGra[1].equals(GranuleConstant.GRANULE_NOT_EXIST))
+	             {
+	            	 System.out.println("no similar granule on granule server!!!");
+	            	 return null;
+	             }
+
+	             //TODO 这里还需要对相似粒的子粒做适合性检测，只有当对应的子粒也符合适合性条件的时候才能算是相似粒
+	             if(executeGranule((Class)similarGra[0]))
+	             {
+	            	 if(j==0)
+	            	 {
+	            		 simiGranule = (Class)similarGra[0];
+	            	 }
+	            	 if(j==gNames.size()-1)
+	            	 {
+	            		 currentGranule = (Class)similarGra[0];
+		                 simiFileName = (String)similarGra[1];
+	            	 }
+	             }
+	             else
+	             {
+	            	 isFit = false;
+	             }
+			}
+
+
+		}
+
+//		printLog("find similar granule: "+simiGranule);
+
+		//如果服务器上找不到合适的粒
+		if(simiGranule==null||simiFileName==null)
+		{
+			System.out.println("Similar granule not found!");
+			return null;
+		}
+
+		GranuleUnit unit = new GranuleUnit(simiGranule,currentGranule,simiFileName);
+
+		return unit;
+		*/
+    }
+
+    /*
         粒替换会后，影子类方法替换，返回类型可能改变，可能为空，所以要先判断返回类型，在执行相关的替代方法函数
         替换返回类型不是void的方法
      */
@@ -161,100 +260,7 @@ public class InvokeAgent {
         ObjectAgent.invalidCache();
     }
 
-    /*
-        查找相似粒功能
-     */
-    private static GranuleUnit searchForSimilarGranule(ArrayList<String> gNames) {
-        if (GranuleOptions.enablePreloadThread)
-            return PreloadThread.getInstance().searchForSimilarGranule(gNames);
 
-        long t0 = System.nanoTime();
-        //如果当前粒为空，那就没法替换
-        if (gNames == null || gNames.size() == 0)
-            return null;
-
-        Object[] similarGra = GranulePolling.getInstance().getPollingResult(gNames.get(0), 0);
-        if (similarGra[1].equals(GranuleConstant.GRANULE_NOT_EXIST)) {
-            System.out.println("no similar granule on granule server!!!");
-            return null;
-        }
-
-        Class simiGranule = (Class) similarGra[0];
-        String simiFileName = (String) similarGra[1];
-
-        boolean isFit = executeGranule(simiGranule);
-        //System.out.println("find similar granule: " + simiGranule + " " + isFit);
-        GranuleUnit unit = new GranuleUnit(simiGranule, null, simiFileName);
-
-        long t1 = System.nanoTime();
-        if (GranuleOptions.enableSearchTimeStat)
-            System.out.println("SearchTime: " + (t1 - t0));
-        return unit;
-
-        //查找并执行相似粒，直到找到合适的粒为止
-
-        //Class currentGranule = null;
-/*
-		while(simiGranule==null||simiFileName==null||currentGranule==null)
-		{
-
-			
-			boolean isFit = true;
-			for(int j=gNames.size()-1;j>=0&&isFit;--j)
-			{
-				 String gName = gNames.get(j);
-				 //TODO 这里如果在服务器上实在找不到粒，应该跳出去，但现在的服务器没有处理这种情况，找不到就一直找
-//				 System.out.println("gName: "+gName);
-	             Object [] similarGra=GranulePolling.getInstance().getPollingResult(gName,0);
-//	             System.out.println(similarGra[1]);
-	             //此处用于测试排除网络部分的执行效率
-//				 Object [] similarGra = new Object[2];
-//				 similarGra[0] = loadedGranules.get(gName+"2");
-//				 if(similarGra[0]==null)
-//					 System.out.println("granule is null");
-//				 similarGra[1] = "C:/Users/Administrator/Downloads/GranuleJIDE/example/Test_1/bin/TestGranuleTree.xml";
-	             if(similarGra[1].equals(GranuleConstant.GRANULE_NOT_EXIST))
-	             {
-	            	 System.out.println("no similar granule on granule server!!!");
-	            	 return null;
-	             }
-	
-	             //TODO 这里还需要对相似粒的子粒做适合性检测，只有当对应的子粒也符合适合性条件的时候才能算是相似粒
-	             if(executeGranule((Class)similarGra[0]))
-	             {
-	            	 if(j==0)
-	            	 {
-	            		 simiGranule = (Class)similarGra[0];
-	            	 }
-	            	 if(j==gNames.size()-1)
-	            	 {
-	            		 currentGranule = (Class)similarGra[0];
-		                 simiFileName = (String)similarGra[1]; 
-	            	 }
-	             }
-	             else
-	             {
-	            	 isFit = false;
-	             }
-			}
-			
-
-		}
-
-//		printLog("find similar granule: "+simiGranule);
-		
-		//如果服务器上找不到合适的粒
-		if(simiGranule==null||simiFileName==null)
-		{
-			System.out.println("Similar granule not found!");
-			return null;
-		}
-		
-		GranuleUnit unit = new GranuleUnit(simiGranule,currentGranule,simiFileName);
-
-		return unit;
-		*/
-    }
 
     /*
 		组合新类并迁移到新对象
@@ -592,7 +598,7 @@ public class InvokeAgent {
             //先将fitness方法的访问权限去掉，然后再执行
             fitMethod.setAccessible(true);
             result = (Boolean) fitMethod.invoke(null, null);
-//			printLog("fitness result of "+granule.getName()+": "+result);
+			printLog("fitness result of "+granule.getName()+": "+result);
         } catch (Exception e) {
             printLog("execute fitness method failed!");
             e.printStackTrace();
@@ -678,19 +684,47 @@ public class InvokeAgent {
         return gName;
     }
 
-    /*
-        打印log
-     */
-    public static void printLog(String info) {
-        System.out.println(info);
-    }
-
-
 
 
     /*
         多线程gop：对粒gName做适合性检查
     */
+
+    /*
+        查找相似粒功能
+     */
+    private static GranuleUnit searchForSimilarGranule(ArrayList<String> gNames, final long lastId) {
+        if (GranuleOptions.enablePreloadThread)
+        {
+//            return PreloadThread.getInstance().searchForSimilarGranule(gNames);
+            return MultiPreloadThread.getInstance().searchForSimilarGranule(gNames,lastId);
+        }
+
+        long t0 = System.nanoTime();
+        //如果当前粒为空，那就没法替换
+        if (gNames == null || gNames.size() == 0)
+            return null;
+
+        Object[] similarGra = GranulePolling.getInstance().getPollingResult(gNames.get(0), 0);
+        if (similarGra[1].equals(GranuleConstant.GRANULE_NOT_EXIST)) {
+            System.out.println("no similar granule on granule server!!!");
+            return null;
+        }
+
+        Class simiGranule = (Class) similarGra[0];
+        String simiFileName = (String) similarGra[1];
+
+        boolean isFit = executeGranule(simiGranule);
+        // TODO
+        printLog("find similar granule: " + simiGranule + " " + isFit);
+
+        GranuleUnit unit = new GranuleUnit(simiGranule, null, simiFileName);
+
+        long t1 = System.nanoTime();
+        if (GranuleOptions.enableSearchTimeStat)
+            System.out.println("SearchTime: " + (t1 - t0));
+        return unit;
+    }
 
     private static ExecuteUnit analyseExecuteUnit(Object obj, String gName, GranuleUnit unit, long thredId) {
 		printLog("in ExecuteUnit analyseExecuteUnit");
@@ -707,7 +741,6 @@ public class InvokeAgent {
 //				System.out.println("unit.simiFileName: "+unit.simiFileName);
 //				System.out.println("simiGranule.getName(): "+unit.simiGranule.getName());
                 long t0 = System.nanoTime();
-                // TODO
                 XmlParser.replaceGranuleTree(lGranules.get(0), unit.simiFileName, unit.simiGranule.getName(), thredId);
                 long t1 = System.nanoTime();
                 System.out.println("replacetree:" + (t1 - t0));
@@ -820,14 +853,24 @@ public class InvokeAgent {
 
         if (gn == null || gn.isRemoved()) {
             lastGranules = null;
-            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(false) + " 1");
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, "+"gName is:"+gName+", gn is null");
+
+            ThredInfo.getThredInfo(thredId).prinTreeNodeMaps();
+
+            // TODO delete
+            try {
+                Thread.sleep(1000*10*60);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             return false;
         }
 
         // 若允许脏技术的话，检查粒是否是脏粒。
         // 如果不是脏粒，那么粒一定是适合的
         if (GranuleOptions.enableDirtyFlag && !gn.isDirty() && gn.getStatus()) {
-            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(true) + " 2");
+            System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, "+"gName is:"+gName+", not dirty, True");
             return true;
         }
 
@@ -838,12 +881,12 @@ public class InvokeAgent {
         if (GranuleOptions.enableAnalyseGranuleSub) {
             System.out.println("fitness check:" + (t1 - t0));
         }
-        System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, " + String.valueOf(result) + " 3");
+        System.out.println(ThredInfo.getThredInfo(thredId).getThredName() + " in doFitness, "+"gName is:"+gName +", result is "+ String.valueOf(result));
         return result;
     }
 
 
-    public static <IN, OUT> OUT replaceMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, long thredId) {
+    public static <IN, OUT> OUT replaceMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, final long thredId) {
 
 //		printLog("in replaceMethod");
         // TODO
@@ -855,7 +898,7 @@ public class InvokeAgent {
             exeUnit = compositeAndTransfer(obj);
         } else {
             t0 = System.nanoTime();
-            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules);
+            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules, thredId);
 
             if (granuleUnit == null) {
                 System.out.println("can't find similar granule!!!");
@@ -890,7 +933,7 @@ public class InvokeAgent {
         return (OUT) result;
     }
 
-    public static <IN> void replaceVoidMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, long thredId) {
+    public static <IN> void replaceVoidMethod(IN obj, String gName, String methodName, Class[] argsTypes, Object[] args, final long thredId) {
 		printLog("replaceVoidMethod");
 
         // TODO
@@ -899,16 +942,17 @@ public class InvokeAgent {
         ExecuteUnit exeUnit;
         long t0 = 0, t1 = 0;
         if (lGranules == null) {
-            System.out.println("lGranules is null!");
+            printLog("lGranules is null!");
             exeUnit = compositeAndTransfer(obj);
 
         } else {
-            System.out.println("lGranules not null!");
+            printLog("lGranules not null!");
             t0 = System.nanoTime();
-            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules);
+            GranuleUnit granuleUnit = searchForSimilarGranule(lGranules, thredId);
 
             // TODO
-            granuleUnit.print();
+            printLog(ThredInfo.getThredInfo(thredId).getThredName()+", "+ThredInfo.getThredInfo(thredId).contexts.get("context").getValue());
+//            granuleUnit.print();
 
             if (granuleUnit == null) {
                 System.out.println("can't find similar granule!!!");
@@ -916,7 +960,7 @@ public class InvokeAgent {
             }
             t1 = System.nanoTime();
             exeUnit = analyseExecuteUnit(obj, gName, granuleUnit, thredId);
-            printLog("compositeAndTransfer over ");
+            printLog(ThredInfo.getThredInfo(thredId).getThredName()+" compositeAndTransfer over.\n");
 
             if (exeUnit == null) {
                 System.out.println("can't find new execute method!!!");
@@ -944,6 +988,17 @@ public class InvokeAgent {
         ObjectAgent.invalidCache();
     }
 
+
+
+    /*
+        打印log
+    */
+    public static void printLog(String info) {
+        if (GranuleOptions.enableGopTestInfo)
+        {
+            System.out.println(info);
+        }
+    }
 
     public static void main(String args[]) {
 //        System.out.println(getGranuleName("InvokeAgent_AD"));

@@ -266,27 +266,54 @@ public class GopContext {
     /*
         多线程gop：修改上下文，并记录是哪个线程发出的请求
      */
-
     public static synchronized String getContext(String name, String modifiers, long thredId) {
 
-        System.out.println("getContext multiThred");
+        printLog("getContext multiThred. "+String.valueOf(thredId));
 
-        HashMap<String, Context> curContext=null;
         if (thredId==1){
-            curContext=contexts;
+            if (GopContext.contexts.containsKey(name)) {
+                Context cn = GopContext.contexts.get(name);
+                if (cn != null && cn.getValue() != null) {
+                    return cn.getValue().trim();
+                }
+                return "";
+            } else{
+                return "";
+            }
         }
         else{
-            curContext=ThredInfo.getThredInfo(thredId).contexts;
-        }
-        if (curContext.containsKey(name)) {
-            Context cn = curContext.get(name);
-            if (cn != null && cn.getValue() != null) {
-                return cn.getValue().trim();
+            if (ThredInfo.getThredInfo(thredId).getContexts().containsKey(name)) {
+                Context cn = ThredInfo.getThredInfo(thredId).getContexts().get(name);
+                if (cn != null && cn.getValue() != null) {
+                    return cn.getValue().trim();
+                }
+                return "";
+            } else{
+                return "";
             }
-            return "";
-        } else
-            return "";
+        }
+
     }
+//    public static synchronized String getContext(String name, String modifiers, long thredId) {
+//
+//        System.out.println("getContext multiThred");
+//
+//        HashMap<String, Context> curContext=null;
+//        if (thredId==1){
+//            curContext=contexts;
+//        }
+//        else{
+//            curContext=ThredInfo.getThredInfo(thredId).contexts;
+//        }
+//        if (curContext.containsKey(name)) {
+//            Context cn = curContext.get(name);
+//            if (cn != null && cn.getValue() != null) {
+//                return cn.getValue().trim();
+//            }
+//            return "";
+//        } else
+//            return "";
+//    }
 
     public static synchronized void modifyContextByObject(String name, java.io.Serializable object, String modifiers, long thredId) {
         modifyContext(name, seraializeObject(object), modifiers, thredId);
@@ -315,7 +342,7 @@ public class GopContext {
                     newValue = null;
                 if (GranuleOptions.enableGopTestInfo){
                     String oldValue=ct.getValue();
-                    System.out.println(thredInfo.getThredName()+", " + name +"; " + oldValue + "->" + newValue);
+                    printLog(thredInfo.getThredName()+", " + name +"; " + oldValue + "->" + newValue);
                 }
                 ct.setValue(newValue);
                 // 脏标记，线程level
@@ -349,7 +376,7 @@ public class GopContext {
 
     public static synchronized void createThredProgram(long thredId, String thredName) {
         ThredInfo thredInfo=new ThredInfo(new Long(thredId), thredName);
-        System.out.println("createThredProgram ok!");
+        printLog("createThredProgram ok!");
     }
 
     /*
@@ -374,4 +401,15 @@ public class GopContext {
         return deepCopy;
     }
 
+
+
+    /*
+        打印log
+    */
+    public static void printLog(String info) {
+        if (GranuleOptions.enableGopTestInfo)
+        {
+            System.out.println(info);
+        }
+    }
 }

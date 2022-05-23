@@ -7,6 +7,7 @@ import granulej.util.xmlUtil;
 
 
 public class SendPacket extends GranulePacket {
+
     private String md5;
     private String granuleName;
 

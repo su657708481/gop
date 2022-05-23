@@ -1,6 +1,7 @@
 package granulej.lang;
 
 public class GranulePacket {
+
     private String config_file;
 
     private String rety_info;

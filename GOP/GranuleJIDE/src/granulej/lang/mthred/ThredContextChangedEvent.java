@@ -1,9 +1,6 @@
 package granulej.lang.mthred;
 
-import granulej.lang.GranuleNode;
-import granulej.lang.GranuleOptions;
-import granulej.lang.GranuleTree;
-import granulej.lang.PreloadThread;
+import granulej.lang.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,11 +52,15 @@ public class ThredContextChangedEvent {
 //                GranuleNode node = GranuleTree.getInstance().getGranuleNode(listener);
                 if (node != null) {
                     // TODO
-                    System.out.println("dirty: "+node.getGranuleName()+ " hashocde:"+String.valueOf(node.hashCode()) +"Name: "+String.valueOf(thredInfo.getThredName()) );
+                    printLog("dirty: "+node.getGranuleName()+ " hashocde:"+String.valueOf(node.hashCode()) +" Name: "+String.valueOf(thredInfo.getThredName()) );
 
                     node.markDirty();
-                    if (GranuleOptions.enablePreloadThread)
-                        PreloadThread.getInstance().invalidateGranule(node);
+                    if (GranuleOptions.enablePreloadThread){
+                        final long lastId=thredInfo.getThredId();
+                        MultiPreloadThread.getInstance().invalidateGranule(node, lastId);
+//                        PreloadThread.getInstance().invalidateGranule(node);
+
+                    }
                 }
             }
         }
@@ -77,5 +78,15 @@ public class ThredContextChangedEvent {
         }
         System.out.println(";");
 
+    }
+
+    /*
+        ¥Ú”°log
+    */
+    public static void printLog(String info) {
+        if (GranuleOptions.enableGopTestInfo)
+        {
+            System.out.println(info);
+        }
     }
 }

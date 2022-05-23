@@ -10,7 +10,7 @@ public class GranuleOptions {
     //    enableRewriteNew：
     public static final boolean enableRewriteNew = true;
     //    enablePreloadThread：是否允许预加载粒技术
-    public static final boolean enablePreloadThread = false;
+    public static final boolean enablePreloadThread = true;
     //    enableSearchTimeStat：
     public static final boolean enableSearchTimeStat = false;
     //    enableAnalyseGranuleSub：
@@ -24,5 +24,6 @@ public class GranuleOptions {
     public static final boolean enableThredTestInfo = true;
 
     // gop中间测试信息输出
-    public static final boolean enableGopTestInfo = true;
+//    public static final boolean enableGopTestInfo = true;
+    public static final boolean enableGopTestInfo = false;
 }

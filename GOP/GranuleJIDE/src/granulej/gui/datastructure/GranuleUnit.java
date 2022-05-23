@@ -15,6 +15,8 @@ public class GranuleUnit{
 	}
 
 	public void print(){
-		System.out.println(simiGranule.getName() +" * " + simiFileName);
+		System.out.println("GranuleUnit simiGranule info: "+
+				simiGranule.getName() +
+				", " + simiFileName);
 	}
 }

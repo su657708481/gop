@@ -138,18 +138,18 @@ public class ObjectAgent {
 
             // todo debug
             for (String d:shadows){
-                System.out.println("debug objectagent: "+d + "; "+ String.valueOf(shadows.size()));
+                printLog("debug object agent: "+d + "; "+ String.valueOf(shadows.size()));
             }
             String shadowClassName = "";
             if (shadows.size() == 0)
                 return lastClass;
             else if (shadows.size() == 1) {
                 if (shadows.get(0).equals(clazz.getSimpleName())){
-                    System.out.println("debug compositeShadowForClass same");
+                    printLog("debug compositeShadowForClass same");
                     return clazz;
                 }
                 else{
-                    System.out.println(clazz.getSimpleName()+" | "+Class.forName(shadows.get(0)).getSimpleName());
+                    printLog(clazz.getSimpleName()+" | "+Class.forName(shadows.get(0)).getSimpleName());
                     return Class.forName(shadows.get(0));
                 }
             } else {
@@ -205,7 +205,6 @@ public class ObjectAgent {
             try {
 
                 Class gclass = compositeShadowForClass(clazz);
-                System.out.println(gclass.getName());
                 constructor = gclass.getDeclaredConstructor(argTypes);
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
@@ -222,5 +221,15 @@ public class ObjectAgent {
         }
 
         return obj;
+    }
+
+    /*
+        打印log
+    */
+    public static void printLog(String info) {
+        if (GranuleOptions.enableGopTestInfo)
+        {
+            System.out.println(info);
+        }
     }
 }

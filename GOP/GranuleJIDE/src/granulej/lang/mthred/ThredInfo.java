@@ -25,6 +25,7 @@ public class ThredInfo {
     //监听线程level
     public ThredContextChangedEvent contextChangedEvent= new ThredContextChangedEvent();
 
+    // 初始化线程信息
     public ThredInfo(Long thredId, String thredName) {
         this.thredId = thredId;
         this.thredName = thredName;
@@ -35,6 +36,10 @@ public class ThredInfo {
 
     public static ThredInfo getThredInfo(Long thredId){
         return globalThredInfo.get(thredId);
+    }
+
+    public HashMap<String, Context> getContexts(){
+        return this.contexts;
     }
 
     /*
@@ -48,29 +53,31 @@ public class ThredInfo {
         this.treeNodeMaps=GranuleTree.copyGranuleTree();
         // 拷贝上下文-粒的监听关系
         contextChangedEvent.listeners= ContextChangedEvent.copyListeners();
+
     }
 
+    /*
+        创建引用线程信息
+     */
+    public static void createCite(long from, long to){
+
+        globalThredInfo.put(from,ThredInfo.getThredInfo(to));
+
+    }
 
     /*
         释放线程信息
     */
-    public void freeThred(){
-        globalThredInfo.remove(this.thredId);
-    }
-
-
-    /*
-        打印线程info
-     */
-    public void  printInfo(){
-        System.out.println(
-            "thredId: "+Long.toString(this.thredId)+"; "+
-            "thredName: "+this.thredName
-        );
+    public static void freeThred(long id){
+        globalThredInfo.remove(id);
     }
 
     public String getThredName(){
         return this.thredName;
+    }
+
+    public long getThredId(){
+        return this.thredId;
     }
 
     public GranuleNode getGranuleNode(String node_name) {
@@ -137,6 +144,30 @@ public class ThredInfo {
             if (g_parent != null)
                 g_parent.addChild(node);
         }
+    }
+
+    /*
+        打印线程info
+     */
+    public void  printInfo(){
+        System.out.println(
+                "thredId: "+Long.toString(this.thredId)+"; "+
+                        "thredName: "+this.thredName
+        );
+    }
+    /*
+        打印线程info
+     */
+    public void  prinTreeNodeMaps(){
+        if (GranuleOptions.enableGopTestInfo)
+        {
+            System.out.print("TreeNodeMaps: ");
+            for(String gname:treeNodeMaps.keySet())
+            {
+                System.out.println(gname);
+            }
+        }
+
     }
 
     public static void main(String[] args) {

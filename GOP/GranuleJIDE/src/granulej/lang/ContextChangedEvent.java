@@ -60,6 +60,7 @@ public class ContextChangedEvent {
     /*
         多线程gop:上下文改变之后，将上下文监听的粒置为脏
      */
+
     public static synchronized void notifyChanged(String contextName, ThredInfo thredInfo) {
 
         if (!GranuleOptions.enableDirtyFlag) return;
@@ -88,7 +89,7 @@ public class ContextChangedEvent {
     }
 
     /*
-        多线程gop
+        多线程gop:线程创建时复制监听关系
      */
     public static Map<String, List<String>> copyListeners(){
 //        printLisener();

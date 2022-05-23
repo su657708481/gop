@@ -1110,15 +1110,19 @@ public class XmlParser {
                     node_name = simi_node.getAttributes().getNamedItem("name").getNodeValue();
                     root_name = simi_node.getAttributes().getNamedItem("class").getNodeValue();
                     gn = new GranuleNode(node_name, root_name, parent);
+                    String context_name = simi_node.getAttributes().getNamedItem("context").getNodeValue();
+
                     if (thredId==1){
                         GranuleTree.getInstance().addGranuleNode(gn);
+                        // 增加监听关系
+                        ContextChangedEvent.addListener(context_name, node_name);
                     }
                     else{
                         ThredInfo.getThredInfo(thredId).addGranuleNode(gn);
+                        // 增加监听关系
+                        ThredInfo.getThredInfo(thredId).contextChangedEvent.addListener(context_name, node_name);
                     }
-                    String context_name = simi_node.getAttributes().getNamedItem("context").getNodeValue();
 
-                    ContextChangedEvent.addListener(context_name, node_name);
 
                     if (!GopContext.getContexts().containsKey(context_name)) {
                         if (!con_seq.equals(""))
@@ -1131,7 +1135,7 @@ public class XmlParser {
         }
         for (Node child = simi_node.getFirstChild(); child != null; child = child.getNextSibling()) {
             parent = gn;
-            updateGranuleTreeNode(child, parent);
+            updateGranuleTreeNode(child, parent, thredId);
         }
     }
 
